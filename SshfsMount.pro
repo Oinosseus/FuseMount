@@ -26,10 +26,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    mounttreewidget.cpp
+    mounttreewidget.cpp \
+    mountitem.cpp \
+    mountitemgroup.cpp
 
 HEADERS += \
         mainwindow.h \
-    mounttreewidget.h
+    mounttreewidget.h \
+    mountitem.h \
+    mountitemgroup.h
 
 FORMS +=
