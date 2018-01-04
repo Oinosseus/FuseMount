@@ -6,6 +6,8 @@
 
 #include <mounttreewidget.h>
 
+#define MOUNTITEMGROUP_TYPE 2
+
 class MountItemGroup : public QTreeWidgetItem
 {
 public:
