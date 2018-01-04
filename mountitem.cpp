@@ -7,5 +7,5 @@ MountItem::MountItem(MountTreeWidget *parent, const QStringList &strings) : QTre
 
 MountItem::MountItem(MountItemGroup *parent, const QStringList &strings) : QTreeWidgetItem(parent, strings, MOUNTITEM_TYPE)
 {
-
+    this->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
 }
