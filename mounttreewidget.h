@@ -28,6 +28,8 @@ private:
     KWallet::Wallet *wallet;
     QTreeWidgetItem *newGroupItem(const QString &name);
     QTreeWidgetItem *newMountItem(const QString &name, const QString &host, const QString &mount, QTreeWidgetItem *groupItem = Q_NULLPTR);
+    void mount(const QString &host, const QString &mount);
+    void unmount(const QString &mount);
     QByteArray getPassword(const QString &host);
     void resetPassword(const QString &host);
 
