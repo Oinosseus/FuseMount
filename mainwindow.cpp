@@ -5,8 +5,6 @@
 #include <QSettings>
 
 #include "mounttreewidget.h"
-#include "mountitemgroup.h"
-#include "mountitem.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {

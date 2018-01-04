@@ -6,18 +6,20 @@
 #include <QDir>
 #include <QProcess>
 #include <QMessageBox>
+#include <QInputDialog>
 
-#include <mountitem.h>
-#include <mountitemgroup.h>
+#define TREEWIDGETITEMTYPE_GROUP 1
+#define TREEWIDGETITEMTYPE_MOUNT 2
 
 MountTreeWidget::MountTreeWidget(QWidget *parent) : QTreeWidget(parent)
 {
-    this->setHeaderLabels(QStringList() << "Name" << "mountpoint" << "server" << "state");
+    this->wallet = Q_NULLPTR;
+
+    this->setHeaderLabels(QStringList() << "Name" << "Host" << "Mount");
     this->setEditTriggers(QAbstractItemView::DoubleClicked);
 
     // load from file
-    MountItem *mi = Q_NULLPTR;
-    MountItemGroup *mig = Q_NULLPTR;
+    QTreeWidgetItem *lastGroupItem = Q_NULLPTR;
     QFile file(QDir::home().absoluteFilePath(".sshfsmount"));
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         while (!file.atEnd()) {
@@ -29,18 +31,18 @@ MountTreeWidget::MountTreeWidget(QWidget *parent) : QTreeWidget(parent)
                 // check for new group
                 QString groupName = QString::fromUtf8(elements.at(0)).trimmed();
                 if (groupName.length() == 0) {
-                    mig = Q_NULLPTR;
-                } else if (!mig || mig->text(0) != groupName) {
-                    mig = new MountItemGroup(this, groupName);
+                    lastGroupItem = Q_NULLPTR;
+                } else if (!lastGroupItem || lastGroupItem->text(0) != groupName) {
+                    lastGroupItem = this->newGroupItem(groupName);
                 }
 
+                // get attributes
                 QString mountName = QString::fromUtf8(elements.at(1)).trimmed();
-                QString localPath = QString::fromUtf8(elements.at(2)).trimmed();
-                QString host = QString::fromUtf8(elements.at(3)).trimmed();
+                QString host = QString::fromUtf8(elements.at(2)).trimmed();
+                QString mount = QString::fromUtf8(elements.at(3)).trimmed();
 
-                if (mig) new MountItem(mig, QStringList() << mountName << localPath << host);
-                else new MountItem(this, QStringList() << mountName << localPath << host);
-
+                // instantiate mount
+                this->newMountItem(mountName, host, mount, lastGroupItem);
             }
         }
     }
@@ -48,12 +50,13 @@ MountTreeWidget::MountTreeWidget(QWidget *parent) : QTreeWidget(parent)
 
 MountTreeWidget::~MountTreeWidget()
 {
+    // close wallet
+    if (this->wallet) delete this->wallet;
+
     // helper variables
-    MountItem *mi;
-    MountItemGroup *mig;
     QTreeWidgetItem *twi;
 
-    // file format: GroupName, Name, MountPoint, Host\n
+    // file format: GroupName, Name, Host, Mount\n
     QFile file(QDir::home().absoluteFilePath(".sshfsmount"));
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 
@@ -62,26 +65,26 @@ MountTreeWidget::~MountTreeWidget()
             twi = this->topLevelItem(i);
 
             // save mount
-            if (twi->type() == MOUNTITEM_TYPE) {
-                mi = dynamic_cast<MountItem *>(twi);
-                if (mi) {
-                    mi->save2File(file);
-                }
+            if (twi->type() == TREEWIDGETITEMTYPE_MOUNT) {
+                QString line;
+                line += ", " + twi->text(0);
+                line += ", " + twi->text(1);
+                line += ", " + twi->text(2);
+                line += "\n";
+                file.write(line.toUtf8());
 
             // save group
-            } else if (twi->type() == MOUNTITEMGROUP_TYPE) {
-                mig = dynamic_cast<MountItemGroup *>(twi);
-                if (mig) {
-
-                    // save sub items
-                    for (int j=0; j<mig->childCount(); ++j) {
-                        mi = dynamic_cast<MountItem *>(mig->child(j));
-
-                        // save mount
-                        if (mi && mi->type() == MOUNTITEM_TYPE) {
-                            mi->save2File(file);
-                        }
-                    }
+            } else if (twi->type() == TREEWIDGETITEMTYPE_GROUP) {
+                QTreeWidgetItem *twi2 = Q_NULLPTR;
+                for (int j=0; j<twi->childCount(); ++j) {
+                    twi2 = twi->child(j);
+                    QString line;
+                    line += twi->text(0);
+                    line += ", " + twi2->text(0);
+                    line += ", " + twi2->text(1);
+                    line += ", " + twi2->text(2);
+                    line += "\n";
+                    file.write(line.toUtf8());
                 }
             }
         }
@@ -96,7 +99,7 @@ void MountTreeWidget::contextMenuEvent(QContextMenuEvent *event)
     // (un)mount options
     QAction actUnMountItem(tr("unmount"));
     QAction actMountItem(tr("mount"), this);
-    if (twi && twi->type() == MOUNTITEM_TYPE) {
+    if (twi && twi->type() == TREEWIDGETITEMTYPE_MOUNT) {
         actUnMountItem.setText(tr("unmount") + " '" + twi->text(0) + "'");
         connect(&actUnMountItem, SIGNAL(triggered(bool)), this, SLOT(slotUnMountItem()));
         menu.addAction(&actUnMountItem);
@@ -112,27 +115,19 @@ void MountTreeWidget::contextMenuEvent(QContextMenuEvent *event)
     connect(&actAddNewMount, SIGNAL(triggered()), this, SLOT(slotAddNewMount()));
     menu.addAction(&actAddNewMount);
 
-    // action mount delete
-    QAction actDeleteMount(tr("delete mount"), this);
-    if (twi && twi->type() == MOUNTITEM_TYPE) {
-        actDeleteMount.setText(tr("delete mount") + " '" + twi->text(0) + "'");
-        connect(&actDeleteMount, SIGNAL(triggered()), this, SLOT(slotDeleteMount()));
-        menu.addAction(&actDeleteMount);
-    }
-
-    menu.addSeparator();
-
     // action group new
     QAction actAddNewGroup(tr("add new group"), this);
     menu.addAction(&actAddNewGroup);
     connect(&actAddNewGroup, SIGNAL(triggered()), this, SLOT(slotAddNewGroup()));
 
-    // action group delete
-    QAction actDeleteGroup(tr("delete group"), this);
-    if (twi && twi->type() == MOUNTITEMGROUP_TYPE) {
-        actDeleteGroup.setText(tr("delete group") + " '" + twi->text(0) + "'");
-        connect(&actDeleteGroup, SIGNAL(triggered()), this, SLOT(slotDeleteGroup()));
-        menu.addAction(&actDeleteGroup);
+    menu.addSeparator();
+
+    // action delete
+    QAction actDeleteMount(tr("delete"), this);
+    if (twi) {
+        actDeleteMount.setText(tr("delete") + " '" + twi->text(0) + "'");
+        connect(&actDeleteMount, SIGNAL(triggered()), this, SLOT(slotDeleteItem()));
+        menu.addAction(&actDeleteMount);
     }
 
     // execute menu
@@ -140,38 +135,74 @@ void MountTreeWidget::contextMenuEvent(QContextMenuEvent *event)
     this->sortItems(0, Qt::AscendingOrder);
 }
 
-void MountTreeWidget::slotAddNewGroup()
+QTreeWidgetItem *MountTreeWidget::newGroupItem(const QString &name)
 {
-    new MountItemGroup(this, tr("new group"));
+    QTreeWidgetItem *groupItem = new QTreeWidgetItem(this, QStringList() << name, TREEWIDGETITEMTYPE_GROUP);
+    groupItem->setFirstColumnSpanned(true);
+    groupItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+    return groupItem;
 }
 
-void MountTreeWidget::slotDeleteGroup()
+QTreeWidgetItem *MountTreeWidget::newMountItem(const QString &name, const QString &host, const QString &mount, QTreeWidgetItem *groupItem)
 {
-    QTreeWidgetItem *twi = this->currentItem();
-    if (twi) delete(twi);
+    QTreeWidgetItem *mountItem = Q_NULLPTR;
+    if (groupItem) mountItem = new QTreeWidgetItem(groupItem, QStringList() << name << host << mount, TREEWIDGETITEMTYPE_MOUNT);
+    else mountItem = new QTreeWidgetItem(this, QStringList() << name << host << mount, TREEWIDGETITEMTYPE_MOUNT);
+    mountItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+    return mountItem;
+}
+
+QByteArray MountTreeWidget::getPassword(const QString &host)
+{
+    QString password;
+
+    // open wallet
+    if (!this->wallet) {
+        QString foldername = "sshfsmount";
+        this->wallet = KWallet::Wallet::openWallet(KWallet::Wallet::NetworkWallet(), this->winId());
+        if (!this->wallet->hasFolder(foldername)) this->wallet->createFolder(foldername);
+        this->wallet->setFolder(foldername);
+    }
+
+    // try to read password
+    this->wallet->readPassword(host, password);
+
+    // ask for new password
+    if (password.length() == 0) {
+        password = QInputDialog::getText(this, tr("Password Request"), tr("Enter password for") + " '" + host + "'", QLineEdit::Password);
+        password = password.trimmed();
+        this->wallet->writePassword(host, password);
+    }
+
+    return password.toUtf8();
+}
+
+void MountTreeWidget::resetPassword(const QString &host)
+{
+    // open wallet
+    if (!this->wallet) {
+        QString foldername = "sshfsmount";
+        this->wallet = KWallet::Wallet::openWallet(KWallet::Wallet::NetworkWallet(), this->winId());
+        if (!this->wallet->hasFolder(foldername)) this->wallet->createFolder(foldername);
+        this->wallet->setFolder(foldername);
+    }
+
+    this->wallet->removeEntry(host);
+}
+
+void MountTreeWidget::slotAddNewGroup()
+{
+    this->newGroupItem("new group");
 }
 
 void MountTreeWidget::slotAddNewMount()
 {
     QTreeWidgetItem *twi = this->currentItem();
-
-    QStringList columns;
-    columns << tr("new mount") << tr("/local/path") << tr("user@host:/remote/path");
-
-    if (twi && twi->type() == MOUNTITEMGROUP_TYPE) {
-        try {
-            MountItemGroup *twig = dynamic_cast<MountItemGroup *>(twi);
-            if (twig) new MountItem(twig, columns);
-            else new MountItem(this, columns);
-        } catch(std::bad_cast) {
-            new MountItem(this, columns);
-        }
-    } else {
-        new MountItem(this, columns);
-    }
+    if (twi && twi->type() == TREEWIDGETITEMTYPE_GROUP) this->newMountItem("new mount", "user@host:/remote/path", "local/path", twi);
+    else this->newMountItem("new mount", "user@host:/remote/path", "local/path");
 }
 
-void MountTreeWidget::slotDeleteMount()
+void MountTreeWidget::slotDeleteItem()
 {
     QTreeWidgetItem *twi = this->currentItem();
     if (twi) delete(twi);
@@ -179,34 +210,41 @@ void MountTreeWidget::slotDeleteMount()
 
 void MountTreeWidget::slotMountItem()
 {
-    MountItem *mi = dynamic_cast<MountItem *>(this->currentItem());
-    if (mi)  {
-        QProcess sshfs;
-        sshfs.start("sshfs", QStringList() << mi->text(2) << mi->text(1));
-        if (!sshfs.waitForStarted()) return;
-        sshfs.waitForFinished();
+    QTreeWidgetItem *twi = this->currentItem();
+    if (twi && twi->type() != TREEWIDGETITEMTYPE_MOUNT) return;
 
-        if (sshfs.exitCode() != 0) {
-            QMessageBox msg(this);
-            msg.setText(QString::fromUtf8(sshfs.readAllStandardError()));
-            msg.exec();
-        }
+    QString host = twi->text(1).trimmed();
+    QString mount = twi->text(2).trimmed();
+
+    QByteArray password = this->getPassword(host);
+
+    QProcess sshfs;
+    sshfs.start("sshfs", QStringList() << host << mount << "-o" << "password_stdin");
+    if (!sshfs.waitForStarted()) return;
+    sshfs.write(password + "\n");
+    sshfs.waitForFinished();
+
+    if (sshfs.exitCode() != 0) {
+        this->resetPassword(host);
+        QMessageBox msg(this);
+        msg.setText(QString::fromUtf8(sshfs.readAllStandardError()));
+        msg.exec();
     }
 }
 
 void MountTreeWidget::slotUnMountItem()
 {
-    MountItem *mi = dynamic_cast<MountItem *>(this->currentItem());
-    if (mi)  {
-        QProcess sshfs;
-        sshfs.start("fusermount", QStringList() << "-u" << mi->text(1));
-        if (!sshfs.waitForStarted()) return;
-        sshfs.waitForFinished();
+    QTreeWidgetItem *twi = this->currentItem();
+    if (twi && twi->type() != TREEWIDGETITEMTYPE_MOUNT) return;
 
-        if (sshfs.exitCode() != 0) {
-            QMessageBox msg(this);
-            msg.setText(QString::fromUtf8(sshfs.readAllStandardError()));
-            msg.exec();
-        }
+    QProcess sshfs;
+    sshfs.start("fusermount", QStringList() << "-u" << twi->text(2));
+    if (!sshfs.waitForStarted()) return;
+    sshfs.waitForFinished();
+
+    if (sshfs.exitCode() != 0) {
+        QMessageBox msg(this);
+        msg.setText(QString::fromUtf8(sshfs.readAllStandardError()));
+        msg.exec();
     }
 }

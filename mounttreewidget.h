@@ -4,6 +4,7 @@
 #include <QTreeWidget>
 #include <QContextMenuEvent>
 #include <QAction>
+#include <KWallet>
 
 class MountTreeWidget : public QTreeWidget
 {
@@ -15,14 +16,20 @@ public:
 
 public slots:
     void slotAddNewGroup();
-    void slotDeleteGroup();
     void slotAddNewMount();
-    void slotDeleteMount();
+    void slotDeleteItem();
     void slotMountItem();
     void slotUnMountItem();
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
+
+private:
+    KWallet::Wallet *wallet;
+    QTreeWidgetItem *newGroupItem(const QString &name);
+    QTreeWidgetItem *newMountItem(const QString &name, const QString &host, const QString &mount, QTreeWidgetItem *groupItem = Q_NULLPTR);
+    QByteArray getPassword(const QString &host);
+    void resetPassword(const QString &host);
 
 };
 
