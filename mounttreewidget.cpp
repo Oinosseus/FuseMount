@@ -15,24 +15,74 @@ MountTreeWidget::MountTreeWidget(QWidget *parent) : QTreeWidget(parent)
 void MountTreeWidget::contextMenuEvent(QContextMenuEvent *event)
 {
     QTreeWidgetItem *twi = this->currentItem();
-
     QMenu menu(this);
 
-    // group administrative actions
-    menu.addAction(new QAction(tr("add new group")));
-    if (twi->type() == MOUNTITEMGROUP_TYPE) {
-        menu.addAction(new QAction(tr("delete group") + " " + twi->text(0)));
+    // action group new
+    QAction actAddNewGroup(tr("add new group"), this);
+    menu.addAction(&actAddNewGroup);
+    connect(&actAddNewGroup, SIGNAL(triggered()), this, SLOT(slotAddNewGroup()));
+
+    // action group delete
+    QAction actDeleteGroup(tr("delete group"), this);
+    if (twi && twi->type() == MOUNTITEMGROUP_TYPE) {
+        actDeleteGroup.setText(tr("delete group") + " '" + twi->text(0) + "'");
+        connect(&actDeleteGroup, SIGNAL(triggered()), this, SLOT(slotDeleteGroup()));
+        menu.addAction(&actDeleteGroup);
     }
+
     menu.addSeparator();
 
-    // mount administrative actions
-    menu.addAction(new QAction(tr("add new mount")));
-    if (twi->type() == MOUNTITEM_TYPE) {
-        menu.addAction(new QAction(tr("delete mount") + " " + twi->text(0)));
+    // action mount new
+    QAction actAddNewMount(tr("add new mount"), this);
+    connect(&actAddNewMount, SIGNAL(triggered()), this, SLOT(slotAddNewMount()));
+    menu.addAction(&actAddNewMount);
+
+    // action mount delete
+    QAction actDeleteMount(tr("delete mount"), this);
+    if (twi && twi->type() == MOUNTITEM_TYPE) {
+        actDeleteMount.setText(tr("delete mount") + " '" + twi->text(0) + "'");
+        connect(&actDeleteMount, SIGNAL(triggered()), this, SLOT(slotDeleteMount()));
+        menu.addAction(&actDeleteMount);
     }
-    menu.addSeparator();
 
-
-    menu.addAction(new QAction("Foo2"));
+    // execute menu
     menu.exec(event->globalPos());
+    this->sortItems(0, Qt::AscendingOrder);
+}
+
+void MountTreeWidget::slotAddNewGroup()
+{
+    new MountItemGroup(this, tr("new group"));
+}
+
+void MountTreeWidget::slotDeleteGroup()
+{
+    QTreeWidgetItem *twi = this->currentItem();
+    if (twi) delete(twi);
+}
+
+void MountTreeWidget::slotAddNewMount()
+{
+    QTreeWidgetItem *twi = this->currentItem();
+
+    QStringList columns;
+    columns << tr("new mount") << tr("/local/path") << tr("user@host:/remote/path");
+
+    if (twi && twi->type() == MOUNTITEMGROUP_TYPE) {
+        try {
+            MountItemGroup *twig = dynamic_cast<MountItemGroup *>(twi);
+            if (twig) new MountItem(twig, columns);
+            else new MountItem(this, columns);
+        } catch(std::bad_cast) {
+            new MountItem(this, columns);
+        }
+    } else {
+        new MountItem(this, columns);
+    }
+}
+
+void MountTreeWidget::slotDeleteMount()
+{
+    QTreeWidgetItem *twi = this->currentItem();
+    if (twi) delete(twi);
 }
