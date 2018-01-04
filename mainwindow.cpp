@@ -22,8 +22,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
 MainWindow::~MainWindow()
 {
-    // save window settings
     QSettings settings;
+
+    // save window settings
     settings.setValue("MainWindow/geometry", this->saveGeometry());
     settings.setValue("MainWindow/windowState", this->saveState());
 }

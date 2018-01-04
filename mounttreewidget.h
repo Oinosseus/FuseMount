@@ -11,6 +11,7 @@ class MountTreeWidget : public QTreeWidget
 
 public:
     MountTreeWidget(QWidget *parent = 0);
+    ~MountTreeWidget();
 
 public slots:
     void slotAddNewGroup();

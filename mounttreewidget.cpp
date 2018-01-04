@@ -2,6 +2,8 @@
 
 #include <QMenu>
 #include <QAction>
+#include <QFile>
+#include <QDir>
 
 #include <mountitem.h>
 #include <mountitemgroup.h>
@@ -10,6 +12,25 @@ MountTreeWidget::MountTreeWidget(QWidget *parent) : QTreeWidget(parent)
 {
     this->setHeaderLabels(QStringList() << "Name" << "mountpoint" << "server" << "state");
     this->setEditTriggers(QAbstractItemView::DoubleClicked);
+}
+
+MountTreeWidget::~MountTreeWidget()
+{
+    // file format: Name, GroupName, MountPoint, Host\n
+    QFile file(QDir::home().absoluteFilePath(".sshfsmount"));
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+
+    // save items
+    file.write("Foo Bar");
+    for (int i=0; i < this->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *twi = this->topLevelItem(i);
+
+        if (twi->type() == MOUNTITEM_TYPE) {
+            file.write(twi->text(0) + ", ," + twi->text(1) + ", " + twi->text(2) + "\n");
+        } else if (twi->type() == MOUNTITEMGROUP_TYPE) {
+            file.write(twi->text(0) + "," + twi->text(0) + "\n");
+        }
+    }
 }
 
 void MountTreeWidget::contextMenuEvent(QContextMenuEvent *event)
