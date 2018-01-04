@@ -12,23 +12,76 @@ MountTreeWidget::MountTreeWidget(QWidget *parent) : QTreeWidget(parent)
 {
     this->setHeaderLabels(QStringList() << "Name" << "mountpoint" << "server" << "state");
     this->setEditTriggers(QAbstractItemView::DoubleClicked);
+
+    // load from file
+    MountItem *mi = Q_NULLPTR;
+    MountItemGroup *mig = Q_NULLPTR;
+    QFile file(QDir::home().absoluteFilePath(".sshfsmount"));
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        while (!file.atEnd()) {
+            QByteArray line = file.readLine();
+            QList<QByteArray> elements = line.split(',');
+
+            if (elements.size() >= 4) {
+
+                // check for new group
+                QString groupName = QString::fromUtf8(elements.at(0)).trimmed();
+                if (groupName.length() == 0) {
+                    mig = Q_NULLPTR;
+                } else if (!mig || mig->text(0) != groupName) {
+                    mig = new MountItemGroup(this, groupName);
+                }
+
+                QString mountName = QString::fromUtf8(elements.at(1)).trimmed();
+                QString localPath = QString::fromUtf8(elements.at(2)).trimmed();
+                QString host = QString::fromUtf8(elements.at(3)).trimmed();
+
+                if (mig) new MountItem(mig, QStringList() << mountName << localPath << host);
+                else new MountItem(this, QStringList() << mountName << localPath << host);
+
+            }
+        }
+    }
 }
 
 MountTreeWidget::~MountTreeWidget()
 {
-    // file format: Name, GroupName, MountPoint, Host\n
+    // helper variables
+    MountItem *mi;
+    MountItemGroup *mig;
+    QTreeWidgetItem *twi;
+
+    // file format: GroupName, Name, MountPoint, Host\n
     QFile file(QDir::home().absoluteFilePath(".sshfsmount"));
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 
-    // save items
-    file.write("Foo Bar");
-    for (int i=0; i < this->topLevelItemCount(); ++i) {
-        QTreeWidgetItem *twi = this->topLevelItem(i);
+        // save items
+        for (int i=0; i < this->topLevelItemCount(); ++i) {
+            twi = this->topLevelItem(i);
 
-        if (twi->type() == MOUNTITEM_TYPE) {
-            file.write(twi->text(0) + ", ," + twi->text(1) + ", " + twi->text(2) + "\n");
-        } else if (twi->type() == MOUNTITEMGROUP_TYPE) {
-            file.write(twi->text(0) + "," + twi->text(0) + "\n");
+            // save mount
+            if (twi->type() == MOUNTITEM_TYPE) {
+                mi = dynamic_cast<MountItem *>(twi);
+                if (mi) {
+                    mi->save2File(file);
+                }
+
+            // save group
+            } else if (twi->type() == MOUNTITEMGROUP_TYPE) {
+                mig = dynamic_cast<MountItemGroup *>(twi);
+                if (mig) {
+
+                    // save sub items
+                    for (int j=0; j<mig->childCount(); ++j) {
+                        mi = dynamic_cast<MountItem *>(mig->child(j));
+
+                        // save mount
+                        if (mi && mi->type() == MOUNTITEM_TYPE) {
+                            mi->save2File(file);
+                        }
+                    }
+                }
+            }
         }
     }
 }

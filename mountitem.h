@@ -14,6 +14,7 @@ class MountItem : public QTreeWidgetItem
 public:
     MountItem(MountTreeWidget *parent, const QStringList &strings);
     MountItem(MountItemGroup *parent, const QStringList &strings);
+    void save2File(QFile &file);
 };
 
 #endif // MOUNTITEM_H
