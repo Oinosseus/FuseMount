@@ -18,6 +18,8 @@ public slots:
     void slotDeleteGroup();
     void slotAddNewMount();
     void slotDeleteMount();
+    void slotMountItem();
+    void slotUnMountItem();
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event) override;

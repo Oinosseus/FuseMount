@@ -4,6 +4,8 @@
 #include <QAction>
 #include <QFile>
 #include <QDir>
+#include <QProcess>
+#include <QMessageBox>
 
 #include <mountitem.h>
 #include <mountitemgroup.h>
@@ -91,17 +93,16 @@ void MountTreeWidget::contextMenuEvent(QContextMenuEvent *event)
     QTreeWidgetItem *twi = this->currentItem();
     QMenu menu(this);
 
-    // action group new
-    QAction actAddNewGroup(tr("add new group"), this);
-    menu.addAction(&actAddNewGroup);
-    connect(&actAddNewGroup, SIGNAL(triggered()), this, SLOT(slotAddNewGroup()));
-
-    // action group delete
-    QAction actDeleteGroup(tr("delete group"), this);
-    if (twi && twi->type() == MOUNTITEMGROUP_TYPE) {
-        actDeleteGroup.setText(tr("delete group") + " '" + twi->text(0) + "'");
-        connect(&actDeleteGroup, SIGNAL(triggered()), this, SLOT(slotDeleteGroup()));
-        menu.addAction(&actDeleteGroup);
+    // (un)mount options
+    QAction actUnMountItem(tr("unmount"));
+    QAction actMountItem(tr("mount"), this);
+    if (twi && twi->type() == MOUNTITEM_TYPE) {
+        actUnMountItem.setText(tr("unmount") + " '" + twi->text(0) + "'");
+        connect(&actUnMountItem, SIGNAL(triggered(bool)), this, SLOT(slotUnMountItem()));
+        menu.addAction(&actUnMountItem);
+        actMountItem.setText(tr("mount") + " '" + twi->text(0) + "'");
+        connect(&actMountItem, SIGNAL(triggered(bool)), this, SLOT(slotMountItem()));
+        menu.addAction(&actMountItem);
     }
 
     menu.addSeparator();
@@ -117,6 +118,21 @@ void MountTreeWidget::contextMenuEvent(QContextMenuEvent *event)
         actDeleteMount.setText(tr("delete mount") + " '" + twi->text(0) + "'");
         connect(&actDeleteMount, SIGNAL(triggered()), this, SLOT(slotDeleteMount()));
         menu.addAction(&actDeleteMount);
+    }
+
+    menu.addSeparator();
+
+    // action group new
+    QAction actAddNewGroup(tr("add new group"), this);
+    menu.addAction(&actAddNewGroup);
+    connect(&actAddNewGroup, SIGNAL(triggered()), this, SLOT(slotAddNewGroup()));
+
+    // action group delete
+    QAction actDeleteGroup(tr("delete group"), this);
+    if (twi && twi->type() == MOUNTITEMGROUP_TYPE) {
+        actDeleteGroup.setText(tr("delete group") + " '" + twi->text(0) + "'");
+        connect(&actDeleteGroup, SIGNAL(triggered()), this, SLOT(slotDeleteGroup()));
+        menu.addAction(&actDeleteGroup);
     }
 
     // execute menu
@@ -159,4 +175,38 @@ void MountTreeWidget::slotDeleteMount()
 {
     QTreeWidgetItem *twi = this->currentItem();
     if (twi) delete(twi);
+}
+
+void MountTreeWidget::slotMountItem()
+{
+    MountItem *mi = dynamic_cast<MountItem *>(this->currentItem());
+    if (mi)  {
+        QProcess sshfs;
+        sshfs.start("sshfs", QStringList() << mi->text(2) << mi->text(1));
+        if (!sshfs.waitForStarted()) return;
+        sshfs.waitForFinished();
+
+        if (sshfs.exitCode() != 0) {
+            QMessageBox msg(this);
+            msg.setText(QString::fromUtf8(sshfs.readAllStandardError()));
+            msg.exec();
+        }
+    }
+}
+
+void MountTreeWidget::slotUnMountItem()
+{
+    MountItem *mi = dynamic_cast<MountItem *>(this->currentItem());
+    if (mi)  {
+        QProcess sshfs;
+        sshfs.start("fusermount", QStringList() << "-u" << mi->text(1));
+        if (!sshfs.waitForStarted()) return;
+        sshfs.waitForFinished();
+
+        if (sshfs.exitCode() != 0) {
+            QMessageBox msg(this);
+            msg.setText(QString::fromUtf8(sshfs.readAllStandardError()));
+            msg.exec();
+        }
+    }
 }
