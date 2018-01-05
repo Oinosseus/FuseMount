@@ -45,3 +45,4 @@ target_link_libraries(sshfsmount
 )
 
 install(TARGETS sshfsmount  ${INSTALL_TARGETS_DEFAULT_ARGS})
+install(FILES src/sshfsmountui.rc DESTINATION ${KXMLGUI_INSTALL_DIR}/sshfsmount)
