@@ -28,8 +28,8 @@ find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
 find_package(KF5Wallet)
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
-    
-set(sshfsmount_SRCS main.cpp mainwindow.cpp mounttreewidget.cpp)
+
+set(sshfsmount_SRCS src/main.cpp src/mainwindow.cpp src/mounttreewidget.cpp)
 
 add_executable(sshfsmount ${sshfsmount_SRCS})
 
