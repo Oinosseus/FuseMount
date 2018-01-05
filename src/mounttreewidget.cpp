@@ -8,8 +8,8 @@
 #include <QMessageBox>
 #include <QInputDialog>
 
-#define TREEWIDGETITEMTYPE_GROUP 1
-#define TREEWIDGETITEMTYPE_MOUNT 2
+static const int TreeWidgetItemTypeGroup = 1;
+static const int TreeWidgetItemTypeMount = 2;
 
 MountTreeWidget::MountTreeWidget(QWidget *parent) : QTreeWidget(parent)
 {
@@ -65,7 +65,7 @@ MountTreeWidget::~MountTreeWidget()
             twi = this->topLevelItem(i);
 
             // save mount
-            if (twi->type() == TREEWIDGETITEMTYPE_MOUNT) {
+            if (twi->type() == TreeWidgetItemTypeMount) {
                 QString line;
                 line += ", " + twi->text(0);
                 line += ", " + twi->text(1);
@@ -74,7 +74,7 @@ MountTreeWidget::~MountTreeWidget()
                 file.write(line.toUtf8());
 
             // save group
-            } else if (twi->type() == TREEWIDGETITEMTYPE_GROUP) {
+            } else if (twi->type() == TreeWidgetItemTypeGroup) {
                 QTreeWidgetItem *twi2 = Q_NULLPTR;
                 for (int j=0; j<twi->childCount(); ++j) {
                     twi2 = twi->child(j);
@@ -135,7 +135,7 @@ void MountTreeWidget::contextMenuEvent(QContextMenuEvent *event)
 
 QTreeWidgetItem *MountTreeWidget::newGroupItem(const QString &name)
 {
-    QTreeWidgetItem *groupItem = new QTreeWidgetItem(this, QStringList() << name, TREEWIDGETITEMTYPE_GROUP);
+    QTreeWidgetItem *groupItem = new QTreeWidgetItem(this, QStringList() << name, TreeWidgetItemTypeGroup);
     groupItem->setFirstColumnSpanned(true);
     groupItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
     return groupItem;
@@ -144,8 +144,8 @@ QTreeWidgetItem *MountTreeWidget::newGroupItem(const QString &name)
 QTreeWidgetItem *MountTreeWidget::newMountItem(const QString &name, const QString &host, const QString &mount, QTreeWidgetItem *groupItem)
 {
     QTreeWidgetItem *mountItem = Q_NULLPTR;
-    if (groupItem) mountItem = new QTreeWidgetItem(groupItem, QStringList() << name << host << mount, TREEWIDGETITEMTYPE_MOUNT);
-    else mountItem = new QTreeWidgetItem(this, QStringList() << name << host << mount, TREEWIDGETITEMTYPE_MOUNT);
+    if (groupItem) mountItem = new QTreeWidgetItem(groupItem, QStringList() << name << host << mount, TreeWidgetItemTypeMount);
+    else mountItem = new QTreeWidgetItem(this, QStringList() << name << host << mount, TreeWidgetItemTypeMount);
     mountItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
     return mountItem;
 }
@@ -228,7 +228,7 @@ void MountTreeWidget::slotAddNewGroup()
 void MountTreeWidget::slotAddNewMount()
 {
     QTreeWidgetItem *twi = this->currentItem();
-    if (twi && twi->type() == TREEWIDGETITEMTYPE_GROUP) this->newMountItem("new mount", "user@host:/remote/path", "local/path", twi);
+    if (twi && twi->type() == TreeWidgetItemTypeGroup) this->newMountItem("new mount", "user@host:/remote/path", "local/path", twi);
     else this->newMountItem("new mount", "user@host:/remote/path", "local/path");
 }
 
@@ -243,14 +243,14 @@ void MountTreeWidget::slotMountItem()
     QTreeWidgetItem *twi = this->currentItem();
 
     // direct mount
-    if (twi && twi->type() == TREEWIDGETITEMTYPE_MOUNT) {
+    if (twi && twi->type() == TreeWidgetItemTypeMount) {
         this->mount(twi->text(1).trimmed(), twi->text(2).trimmed());
 
     // mount all items of a group
-    } else if (twi && twi->type() == TREEWIDGETITEMTYPE_GROUP) {
+    } else if (twi && twi->type() == TreeWidgetItemTypeGroup) {
         for (int i=0; i<twi->childCount(); ++i) {
             QTreeWidgetItem *twi2 = twi->child(i);
-            if (twi2 && twi2->type() == TREEWIDGETITEMTYPE_MOUNT) {
+            if (twi2 && twi2->type() == TreeWidgetItemTypeMount) {
                 this->mount(twi2->text(1).trimmed(), twi2->text(2).trimmed());
             }
         }
@@ -262,14 +262,14 @@ void MountTreeWidget::slotUnMountItem()
     QTreeWidgetItem *twi = this->currentItem();
 
     // direct unmount
-    if (twi && twi->type() == TREEWIDGETITEMTYPE_MOUNT) {
+    if (twi && twi->type() == TreeWidgetItemTypeMount) {
         this->unmount(twi->text(2).trimmed());
 
     // unmount all items of a group
-    } else if (twi && twi->type() == TREEWIDGETITEMTYPE_GROUP) {
+    } else if (twi && twi->type() == TreeWidgetItemTypeGroup) {
         for (int i=0; i<twi->childCount(); ++i) {
             QTreeWidgetItem *twi2 = twi->child(i);
-            if (twi2 && twi2->type() == TREEWIDGETITEMTYPE_MOUNT) {
+            if (twi2 && twi2->type() == TreeWidgetItemTypeMount) {
                 this->unmount(twi2->text(2).trimmed());
             }
         }
