@@ -23,10 +23,10 @@ find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
     CoreAddons      # KAboutData
     I18n            # KLocalizedString
     WidgetsAddons   # KMessageBox
+    Wallet
+    XmlGui
+    ConfigWidgets
 )
-
-find_package(KF5Wallet)
-find_package(KF5XmlGui)
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
@@ -41,6 +41,7 @@ target_link_libraries(sshfsmount
     KF5::WidgetsAddons
     KF5::Wallet
     KF5::XmlGui
+    KF5::ConfigWidgets
 )
 
 install(TARGETS sshfsmount  ${INSTALL_TARGETS_DEFAULT_ARGS})
