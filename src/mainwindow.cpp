@@ -6,7 +6,7 @@
 
 #include "mounttreewidget.h"
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
+MainWindow::MainWindow(QWidget *parent) : KXmlGuiWindow(parent)
 {
     // list view
     MountTreeWidget *mountTree = new MountTreeWidget();
@@ -16,6 +16,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     QSettings settings;
     this->restoreGeometry(settings.value("MainWindow/geometry").toByteArray());
     this->restoreState(settings.value("MainWindow/windowState").toByteArray());
+
+    // kde framework
+    this->setupGUI();
 }
 
 MainWindow::~MainWindow()

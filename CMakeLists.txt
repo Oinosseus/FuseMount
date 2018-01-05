@@ -26,6 +26,7 @@ find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
 )
 
 find_package(KF5Wallet)
+find_package(KF5XmlGui)
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
@@ -39,6 +40,7 @@ target_link_libraries(sshfsmount
     KF5::I18n
     KF5::WidgetsAddons
     KF5::Wallet
+    KF5::XmlGui
 )
 
 install(TARGETS sshfsmount  ${INSTALL_TARGETS_DEFAULT_ARGS})

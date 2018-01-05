@@ -43,8 +43,9 @@ int main(int argc, char *argv[])
     parser.process(a);
     aboutData.processCommandLine(&parser);
 
-    MainWindow w;
-    w.show();
+    MainWindow *w = new MainWindow();
+    w->setObjectName("mainwindow");
+    w->show();
 
     return a.exec();
 }
