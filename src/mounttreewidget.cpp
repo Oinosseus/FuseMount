@@ -97,7 +97,7 @@ void MountTreeWidget::contextMenuEvent(QContextMenuEvent *event)
     QMenu menu(this);
 
     // (un)mount options
-    QAction actUnMountItem(tr("unmount"));
+    QAction actUnMountItem(tr("unmount"), this);
     QAction actMountItem(tr("mount"), this);
     actUnMountItem.setText(tr("unmount") + " '" + twi->text(0) + "'");
     connect(&actUnMountItem, SIGNAL(triggered(bool)), this, SLOT(slotUnMountItem()));
