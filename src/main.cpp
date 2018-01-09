@@ -43,9 +43,14 @@ int main(int argc, char *argv[])
     parser.process(a);
     aboutData.processCommandLine(&parser);
 
-    MainWindow *w = new MainWindow();
-    w->setObjectName("mainwindow");
-    w->show();
+    if (a.isSessionRestored()) {
+        kRestoreMainWindows<MainWindow>();
+    } else {
+        MainWindow *w = new MainWindow();
+        w->setObjectName("mainwindow");
+        w->show();
+    }
+    
 
     return a.exec();
 }
