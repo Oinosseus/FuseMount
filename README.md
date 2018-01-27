@@ -9,6 +9,7 @@ This program requires KDE framework.
 
 * mount/unmount sshfs
 * group mounts
+* store passwords in kde wallet
 
 # Screeshot
 
