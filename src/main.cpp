@@ -10,13 +10,13 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    KLocalizedString::setApplicationDomain("sshfsmount");
+    KLocalizedString::setApplicationDomain("fusemount");
 
     KAboutData aboutData(
                             // The program name used internally. (componentName)
-                            QStringLiteral("sshfsmount"),
+                            QStringLiteral("fusemount"),
                             // A displayable program name string. (displayName)
-                            i18n("SshfsMount"),
+                            i18n("FuseMount"),
                             // The program version string. (version)
                             QStringLiteral("0.1a"),
                             // Short description of what the app does. (shortDescription)

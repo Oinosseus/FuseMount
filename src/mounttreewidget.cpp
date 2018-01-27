@@ -20,7 +20,7 @@ MountTreeWidget::MountTreeWidget(QWidget *parent) : QTreeWidget(parent)
 
     // load from file
     QTreeWidgetItem *lastGroupItem = Q_NULLPTR;
-    QFile file(QDir::home().absoluteFilePath(".sshfsmount"));
+    QFile file(QDir::home().absoluteFilePath(".fusemount"));
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         while (!file.atEnd()) {
             QByteArray line = file.readLine();
@@ -57,7 +57,7 @@ MountTreeWidget::~MountTreeWidget()
     QTreeWidgetItem *twi;
 
     // file format: GroupName, Name, Host, Mount\n
-    QFile file(QDir::home().absoluteFilePath(".sshfsmount"));
+    QFile file(QDir::home().absoluteFilePath(".fusemount"));
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 
         // save items
@@ -188,7 +188,7 @@ QByteArray MountTreeWidget::getPassword(const QString &host)
 
     // open wallet
     if (!this->wallet) {
-        QString foldername = "sshfsmount";
+        QString foldername = "fusemount";
         this->wallet = KWallet::Wallet::openWallet(KWallet::Wallet::NetworkWallet(), this->winId());
         if (!this->wallet->hasFolder(foldername)) this->wallet->createFolder(foldername);
         this->wallet->setFolder(foldername);
@@ -211,7 +211,7 @@ void MountTreeWidget::resetPassword(const QString &host)
 {
     // open wallet
     if (!this->wallet) {
-        QString foldername = "sshfsmount";
+        QString foldername = "fusemount";
         this->wallet = KWallet::Wallet::openWallet(KWallet::Wallet::NetworkWallet(), this->winId());
         if (!this->wallet->hasFolder(foldername)) this->wallet->createFolder(foldername);
         this->wallet->setFolder(foldername);
