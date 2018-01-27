@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
                             // Can contain any information desired. (otherText)
                             i18n("Frontend for sshfs allowing grouped mounts and using KWallet."),
                             // The program homepage string. (homePageAddress = QString())
-                            QStringLiteral("http://www.example.com"),
+                            QStringLiteral("https://github.com/Oinosseus/FuseMount"),
                             // The bug report email address
                             // (bugsEmailAddress = QLatin1String("submit@bugs.kde.org")
                             QStringLiteral(""));
