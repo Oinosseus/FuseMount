@@ -1,6 +1,6 @@
-project (sshfsmount)
+project (fusemount)
 
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 set(QT_MIN_VERSION "5.6.0")
 set(KF5_MIN_VERSION "5.2.0")
 
@@ -23,22 +23,26 @@ find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
     CoreAddons      # KAboutData
     I18n            # KLocalizedString
     WidgetsAddons   # KMessageBox
+    Wallet
+    XmlGui
+    ConfigWidgets
 )
 
-find_package(KF5Wallet)
-
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
-    
-set(sshfsmount_SRCS main.cpp mainwindow.cpp mounttreewidget.cpp)
 
-add_executable(sshfsmount ${sshfsmount_SRCS})
+set(fusemount_SRCS src/main.cpp src/mainwindow.cpp src/mounttreewidget.cpp)
 
-target_link_libraries(sshfsmount
+add_executable(fusemount ${fusemount_SRCS})
+
+target_link_libraries(fusemount
     Qt5::Widgets
     KF5::CoreAddons
     KF5::I18n
     KF5::WidgetsAddons
     KF5::Wallet
+    KF5::XmlGui
+    KF5::ConfigWidgets
 )
 
-install(TARGETS sshfsmount  ${INSTALL_TARGETS_DEFAULT_ARGS})
+install(TARGETS fusemount  ${INSTALL_TARGETS_DEFAULT_ARGS})
+install(FILES src/fusemountui.rc DESTINATION ${KXMLGUI_INSTALL_DIR}/fusemount)
